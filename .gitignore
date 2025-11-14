@@ -11,7 +11,7 @@
 .gemini/
 .github/
 .opencode/
-.windsurf/
+#.windsurf/
 AGENTS.md
 CLAUDE.md
 GEMINI.md
