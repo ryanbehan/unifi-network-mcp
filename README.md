@@ -23,10 +23,10 @@ Read-only Model Context Protocol (MCP) server that exposes UniFi Network control
    export UNIFI_TARGETS='[
      {
        "id": "home",
-       "base_url": "https://edge",
+       "base_url": "https://<unifi_host>",
        "controller_type": "unifi_os",
        "default_site": "default",
-       "auth": { "apiKey": "REDACTED", "headerName": "X-API-KEY" },
+       "auth": { "apiKey": "UNIFI_API_KEY", "headerName": "X-API-KEY" },
        "verify_ssl": false,
        "timeout_ms": 20000,
        "rate_limit_per_sec": 5
@@ -58,56 +58,62 @@ Leave this process running while your IDE/CLI talks to the MCP.
 
 ## Tool-specific quickstarts
 
-### Windsurf / Cascade
-1. Start the MCP locally (`./run-mcp.sh`).
-2. In Windsurf: **Plugins → Model Context Protocol → Add MCP Server → Local Command**.
-3. Command: `./run-mcp.sh` | Working dir: `/path/to/unifi-network-mcp`.
-4. Add env var `UNIFI_TARGETS` in the dialog (paste the JSON string) if not globally exported.
-5. Save; the server appears under *My MCP Servers* and Cascade tools (e.g., `/call list_sites tool`) now work.
+### Windsurf / Cascade (npx)
+1. In Windsurf: **Plugins → Model Context Protocol → Add MCP Server → Local Command**.
+2. Command: `npx`
+3. Arguments: `-y unifi-network-mcp`
+4. Add env var `UNIFI_TARGETS` in the dialog (paste the JSON string) if not globally exported:
+   ```
+   [{"id":"home","base_url":"https://<unifi_host>","controller_type":"unifi_os","default_site":"Default","auth":{"apiKey":"UNIFI_API_KEY","headerName":"X-API-KEY"},"verify_ssl":false,"timeout_ms":20000,"rate_limit_per_sec":5}]
+   ```
+5. Save; Windsurf will fetch the MCP from npm automatically and expose the tools under *My MCP Servers*.
 
-### Cursor
-1. Start MCP (`./run-mcp.sh`).
-2. Create/update `.cursor/mcp.config.json` in the repo:
+### Cursor (npx)
+1. Create/update `.cursor/mcp.config.json` in your repo:
    ```json
    {
      "servers": [
        {
          "name": "unifi-network",
-         "command": "./run-mcp.sh",
-         "cwd": "servers/unifi-network-mcp",
-         "env": { "UNIFI_TARGETS": "<json>" }
+         "command": "npx",
+         "args": ["-y", "unifi-network-mcp"],
+         "env": {
+           "UNIFI_TARGETS": "[{\"id\":\"home\",\"base_url\":\"https://<unifi_host>\",\"controller_type\":\"unifi_os\",\"default_site\":\"Default\",\"auth\":{\"apiKey\":\"UNIFI_API_KEY\",\"headerName\":\"X-API-KEY\"},\"verify_ssl\":false,\"timeout_ms\":20000,\"rate_limit_per_sec\":5}]"
+         }
        }
      ]
    }
    ```
-3. Reload Cursor (Cmd+Shift+P → "Reload Window"). The MCP now appears in the MCP panel.
+2. Reload Cursor (Cmd+Shift+P → "Reload Window"). Cursor will `npx` the MCP whenever needed.
 
-### Codex
-1. Ensure `~/.codex/config.toml` contains:
+### Codex (npx-based install)
+1. Add this block to `~/.codex/config.toml`:
    ```toml
-   [mcp_servers.unifi-network]
-   command = "/Users/<you>/.local/share/unifi-network-mcp/run-mcp.sh"
-   args = []
-   cwd = "/Users/<you>/.local/share/unifi-network-mcp"
-   [mcp_servers.unifi-network.env]
-     UNIFI_TARGETS = '...json...'
+   [mcp_servers.unifi-network-mcp]
+       command = "npx"
+       args = ["-y", "unifi-network-mcp"]
+       [mcp_servers.unifi-network-mcp.env]
+           UNIFI_TARGETS = '[{"id":"home","base_url":"https://<unifi_host>","controller_type":"unifi_os","default_site":"Default","auth":{"apiKey":"UNIFI_API_KEY","headerName":"X-API-KEY"},"verify_ssl":false,"timeout_ms":20000,"rate_limit_per_sec":5}]'
    ```
-2. Launch Codex in a repo terminal. Run `codex exec list_targets` to verify the MCP responds.
+   *Tip:* replace `<API_KEY>` and any controller metadata with your own values. Codex will download + cache the MCP automatically on first launch.
+2. From any repo, run `codex exec list_sites --skip-git-repo-check` to confirm connectivity.
 
-### Gemini CLI
+### Gemini CLI (npx)
 1. Install the Google `gemini` CLI (Early Access) and enable MCP support.
 2. Create `~/.gemini/mcp.yaml`:
    ```yaml
    servers:
      - name: unifi-network
-       command: ./run-mcp.sh
-       cwd: /Users/<you>/.local/share/unifi-network-mcp
+       command: npx
+       args:
+         - -y
+         - unifi-network-mcp
        env:
-         UNIFI_TARGETS: "...json..."
+         UNIFI_TARGETS: "[{\"id\":\"home\",\"base_url\":\"https://<unifi_host>\",\"controller_type\":\"unifi_os\",\"default_site\":\"Default\",\"auth\":{\"apiKey\":\"UNIFI_API_KEY\",\"headerName\":\"X-API-KEY\"},\"verify_ssl\":false,\"timeout_ms\":20000,\"rate_limit_per_sec\":5}]"
    ```
 3. Run `gemini mcp servers list` to confirm, then `gemini chat --use-mcp unifi-network`.
 
-### Amazon Q CLI
+### Amazon Q CLI (npx)
 1. Install the Amazon Q developer preview CLI.
 2. Edit `~/.amazon-q/mcp.json`:
    ```json
@@ -115,9 +121,11 @@ Leave this process running while your IDE/CLI talks to the MCP.
      "servers": [
        {
          "name": "unifi-network",
-         "command": "./run-mcp.sh",
-         "cwd": "/Users/<you>/.local/share/unifi-network-mcp",
-         "env": { "UNIFI_TARGETS": "...json..." }
+         "command": "npx",
+         "args": ["-y", "unifi-network-mcp"],
+         "env": {
+           "UNIFI_TARGETS": "[{\"id\":\"home\",\"base_url\":\"https://<unifi_host>\",\"controller_type\":\"unifi_os\",\"default_site\":\"Default\",\"auth\":{\"apiKey\":\"UNIFI_API_KEY\",\"headerName\":\"X-API-KEY\"},\"verify_ssl\":false,\"timeout_ms\":20000,\"rate_limit_per_sec\":5}]"
+         }
        }
      ]
    }
@@ -125,16 +133,39 @@ Leave this process running while your IDE/CLI talks to the MCP.
 3. Launch Q CLI with `amazon-q chat --mcp unifi-network`.
 
 ### Opencode (OpenAI Desktop)
-1. Open **Settings → MCP Servers → Add**.
-2. Command: `/Users/<you>/.local/share/unifi-network-mcp/run-mcp.sh`.
-3. Add `UNIFI_TARGETS` in the env table.
-4. Save and reconnect; you can now call UniFi tools inside Opencode chats.
+1. Create or edit `~/.config/opencode/opencode.json`:
+   ```json
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "mcp": {
+       "unifi-network-mcp": {
+         "type": "local",
+         "command": ["npx", "-y", "unifi-network-mcp"],
+         "enabled": true,
+         "environment": {
+           "UNIFI_TARGETS": "[{\"id\":\"home\",\"base_url\":\"https://<unifi_host>\",\"controller_type\":\"unifi_os\",\"default_site\":\"Default\",\"auth\":{\"apiKey\":\"UNIFI_API_KEY\",\"headerName\":\"X-API-KEY\"},\"verify_ssl\":false,\"timeout_ms\":20000,\"rate_limit_per_sec\":5}]"
+         }
+       }
+     }
+   }
+   ```
+2. Restart Opencode or reload configuration; the `unifi-network-mcp` server will be available in chats.
 
 ### Claude Code (Anthropic VS Code extension)
-1. Start MCP (`./run-mcp.sh`).
-2. In VS Code: **Anthropic Claude → Settings → MCP Servers → Add Custom Server**.
-3. Command/CWD/env identical to above.
-4. Use `@mcp unifi-network list_sites` (or similar) inside Claude chats to verify connectivity.
+1. Open VS Code **Settings (JSON)** (Command Palette → "Preferences: Open Settings (JSON)").
+2. Add or merge the following under the `claude.mcpServers` key:
+   ```json
+   "claude.mcpServers": {
+     "unifi-network-mcp": {
+       "command": "npx",
+       "args": ["-y", "unifi-network-mcp"],
+       "env": {
+         "UNIFI_TARGETS": "[{\"id\":\"home\",\"base_url\":\"https://<unifi_host>\",\"controller_type\":\"unifi_os\",\"default_site\":\"Default\",\"auth\":{\"apiKey\":\"UNIFI_API_KEY\",\"headerName\":\"X-API-KEY\"},\"verify_ssl\":false,\"timeout_ms\":20000,\"rate_limit_per_sec\":5}]"
+       }
+     }
+   }
+   ```
+3. Reload VS Code. Claude Code will launch the MCP via npm; verify with `@mcp unifi-network-mcp list_sites` in a Claude chat.
 
 ## Verifying
 - `npm run test:env` calls `list_sites` against every configured target and fails fast on TLS/auth errors.
